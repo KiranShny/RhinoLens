@@ -13,6 +13,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import io.github.kiranshny.rhinolens.ui.theme.RhinoLensTheme
 
 @Composable
@@ -45,4 +46,10 @@ fun HomeScreen() {
             }
         }
     }
+}
+
+@Composable
+@Preview
+fun HomeScreenPreview() {
+    HomeScreen()
 }
