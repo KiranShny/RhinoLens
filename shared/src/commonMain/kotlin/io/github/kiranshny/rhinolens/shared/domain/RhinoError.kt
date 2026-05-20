@@ -9,3 +9,5 @@ sealed interface RhinoError {
     data class OcrFailed(val cause: String) : RhinoError
     data class StorageWriteFailed(val cause: String) : RhinoError
 }
+
+class RhinoException(val error: RhinoError) : Exception(error.toString())
