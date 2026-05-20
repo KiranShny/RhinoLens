@@ -133,7 +133,7 @@ private fun CameraContent(
             onSourceClick = { pickerTarget = LanguagePickerTarget.SOURCE },
             onTargetClick = { pickerTarget = LanguagePickerTarget.TARGET },
             onSwap = viewModel::swap,
-            onCapture = { viewModel.capture(onCaptured = onOpenCapture) },
+            onCapture = { viewModel.capture(onSaved = onOpenCapture) },
             onLibraryClick = onOpenLibrary,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
