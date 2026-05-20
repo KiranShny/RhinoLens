@@ -16,11 +16,11 @@ interface CaptureDao {
     suspend fun get(id: String): CaptureEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(entity: CaptureEntity)
+    suspend fun upsert(entity: CaptureEntity): Long
 
     @Query("DELETE FROM captures WHERE id = :id")
-    suspend fun delete(id: String)
+    suspend fun delete(id: String): Int
 
     @Query("DELETE FROM captures")
-    suspend fun clear()
+    suspend fun clear(): Int
 }
