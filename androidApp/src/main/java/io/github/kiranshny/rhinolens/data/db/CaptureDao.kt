@@ -7,6 +7,7 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@JvmSuppressWildcards
 interface CaptureDao {
 
     @Query("SELECT * FROM captures ORDER BY created_at DESC")
