@@ -39,17 +39,7 @@ Pods/
 Carthage/Build/
 *.xcframework/
 
-.idea/caches/
-.idea/libraries/
-.idea/shelf/
-.idea/dictionaries/
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/assetWizardSettings.xml
-.idea/navEditor.xml
-.idea/jarRepositories.xml
-.idea/.name
-.idea/copyright/profiles_settings.xml
+.idea/
 
 .DS_Store
 .DS_Store?
