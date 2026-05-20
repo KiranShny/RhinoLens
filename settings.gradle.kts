@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RhinoLens"
 include(":androidApp")
+include(":shared")
