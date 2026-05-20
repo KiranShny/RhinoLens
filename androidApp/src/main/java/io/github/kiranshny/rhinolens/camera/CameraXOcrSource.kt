@@ -8,6 +8,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.view.PreviewView
 import androidx.lifecycle.LifecycleOwner
 import com.google.mlkit.vision.common.InputImage
@@ -23,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.tasks.await
 
 private const val TARGET_FPS = 12
 private const val FRAME_INTERVAL_MS = 1000L / TARGET_FPS
@@ -50,7 +50,7 @@ class CameraXOcrSource(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
     ) {
-        val cameraProvider = ProcessCameraProvider.getInstance(context).await()
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         cameraProvider.unbindAll()
 
         val preview = Preview.Builder().build().apply {
@@ -115,17 +115,17 @@ class CameraXOcrSource(
     }
 }
 
-private fun Text.toTextBlocks(width: Int, height: Int): List<TextBlock> {
+internal fun Text.toTextBlocks(width: Int, height: Int): List<TextBlock> {
     if (width <= 0 || height <= 0) return emptyList()
     val w = width.toFloat()
     val h = height.toFloat()
-    return blocks.flatMap { block ->
+    return textBlocks.flatMap { block ->
         block.lines.mapNotNull { line ->
             val rect = line.boundingBox ?: return@mapNotNull null
             val cx = (rect.left + rect.right) / 2
             val cy = (rect.top + rect.bottom) / 2
             TextBlock(
-                id = idFor(line.text, cx, cy),
+                id = "${cx / 64}:${cy / 64}:${line.text.take(24).hashCode()}",
                 text = line.text,
                 bbox = NormalizedRect(
                     left = (rect.left / w).coerceIn(0f, 1f),
@@ -133,16 +133,9 @@ private fun Text.toTextBlocks(width: Int, height: Int): List<TextBlock> {
                     right = (rect.right / w).coerceIn(0f, 1f),
                     bottom = (rect.bottom / h).coerceIn(0f, 1f),
                 ),
-                rotationDeg = line.angle,
-                confidence = line.confidence ?: 1f,
+                rotationDeg = 0f,
+                confidence = 1f,
             )
         }
     }
-}
-
-private fun idFor(text: String, centerX: Int, centerY: Int): String {
-    val bucketX = centerX / 64
-    val bucketY = centerY / 64
-    val textHash = text.take(24).hashCode()
-    return "$bucketX:$bucketY:$textHash"
 }
