@@ -74,6 +74,9 @@ fun CameraScreen(navController: NavHostController) {
             viewModel = viewModel,
             onBack = { navController.popBackStack() },
             onOpenLibrary = { navController.navigate(RhinoLensRoute.Library.path) },
+            onOpenCapture = { id ->
+                navController.navigate(RhinoLensRoute.CaptureDetail.build(id))
+            },
         )
     } else {
         CameraPermissionDenied(
@@ -88,6 +91,7 @@ private fun CameraContent(
     viewModel: CameraViewModel,
     onBack: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenCapture: (String) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val blocks by viewModel.translatedBlocks.collectAsStateWithLifecycle()
@@ -129,7 +133,7 @@ private fun CameraContent(
             onSourceClick = { pickerTarget = LanguagePickerTarget.SOURCE },
             onTargetClick = { pickerTarget = LanguagePickerTarget.TARGET },
             onSwap = viewModel::swap,
-            onCapture = { },
+            onCapture = { viewModel.capture(onCaptured = onOpenCapture) },
             onLibraryClick = onOpenLibrary,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
