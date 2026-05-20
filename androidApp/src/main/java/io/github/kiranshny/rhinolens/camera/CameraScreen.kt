@@ -37,6 +37,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import io.github.kiranshny.rhinolens.appContainer
+import io.github.kiranshny.rhinolens.nav.RhinoLensRoute
+import io.github.kiranshny.rhinolens.shared.domain.Language
+
+private enum class LanguagePickerTarget { SOURCE, TARGET }
 
 @Composable
 fun CameraScreen(navController: NavHostController) {
@@ -66,7 +70,11 @@ fun CameraScreen(navController: NavHostController) {
     }
 
     if (hasPermission) {
-        CameraContent(viewModel = viewModel, onBack = { navController.popBackStack() })
+        CameraContent(
+            viewModel = viewModel,
+            onBack = { navController.popBackStack() },
+            onOpenLibrary = { navController.navigate(RhinoLensRoute.Library.path) },
+        )
     } else {
         CameraPermissionDenied(
             onRetry = { permissionLauncher.launch(Manifest.permission.CAMERA) },
@@ -79,9 +87,12 @@ fun CameraScreen(navController: NavHostController) {
 private fun CameraContent(
     viewModel: CameraViewModel,
     onBack: () -> Unit,
+    onOpenLibrary: () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val blocks by viewModel.translatedBlocks.collectAsStateWithLifecycle()
+    val pair by viewModel.pair.collectAsStateWithLifecycle()
+    var pickerTarget by remember { mutableStateOf<LanguagePickerTarget?>(null) }
 
     Box(
         modifier = Modifier
@@ -98,6 +109,7 @@ private fun CameraContent(
             },
         )
         AROverlay(blocks = blocks, modifier = Modifier.fillMaxSize())
+
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -110,6 +122,41 @@ private fun CameraContent(
                 tint = Color.White,
             )
         }
+
+        CameraBottomToolbar(
+            source = pair.source,
+            target = pair.target,
+            onSourceClick = { pickerTarget = LanguagePickerTarget.SOURCE },
+            onTargetClick = { pickerTarget = LanguagePickerTarget.TARGET },
+            onSwap = viewModel::swap,
+            onCapture = { },
+            onLibraryClick = onOpenLibrary,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+
+    when (pickerTarget) {
+        LanguagePickerTarget.SOURCE -> LanguagePickerSheet(
+            title = "Source language",
+            allowAuto = true,
+            selected = pair.source,
+            onSelect = { lang: Language? ->
+                viewModel.setSource(lang)
+                pickerTarget = null
+            },
+            onDismiss = { pickerTarget = null },
+        )
+        LanguagePickerTarget.TARGET -> LanguagePickerSheet(
+            title = "Target language",
+            allowAuto = false,
+            selected = pair.target,
+            onSelect = { lang: Language? ->
+                if (lang != null) viewModel.setTarget(lang)
+                pickerTarget = null
+            },
+            onDismiss = { pickerTarget = null },
+        )
+        null -> Unit
     }
 }
 
