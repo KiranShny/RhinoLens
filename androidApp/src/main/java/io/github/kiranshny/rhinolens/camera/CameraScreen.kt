@@ -109,6 +109,7 @@ private fun CameraContent(
                 PreviewView(ctx).apply {
                     scaleType = PreviewView.ScaleType.FILL_CENTER
                     controller = viewModel.cameraController
+                    setBackgroundColor(android.graphics.Color.BLACK)
                 }
             },
         )
