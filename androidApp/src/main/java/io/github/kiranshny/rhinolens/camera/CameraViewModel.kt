@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.view.PreviewView
+import androidx.camera.view.LifecycleCameraController
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
@@ -46,6 +46,7 @@ class CameraViewModel(
 ) : ViewModel() {
 
     private val ocrSource = CameraXOcrSource(appContext.applicationContext)
+    val cameraController: LifecycleCameraController get() = ocrSource.controller
 
     private val sourceOverride = MutableStateFlow<Language?>(null)
 
@@ -71,10 +72,8 @@ class CameraViewModel(
     private val _capturing = MutableStateFlow(false)
     val capturing: StateFlow<Boolean> = _capturing
 
-    fun bindCamera(previewView: PreviewView, lifecycleOwner: LifecycleOwner) {
-        viewModelScope.launch {
-            runCatching { ocrSource.bind(previewView, lifecycleOwner) }
-        }
+    fun bindCamera(lifecycleOwner: LifecycleOwner) {
+        ocrSource.bind(lifecycleOwner)
     }
 
     fun setSource(language: Language?) {
@@ -95,27 +94,25 @@ class CameraViewModel(
     }
 
     fun capture(onSaved: (captureId: String) -> Unit) {
-        val imageCapture = ocrSource.imageCapture ?: return
         if (_capturing.value) return
         _capturing.value = true
 
         val id = UUID.randomUUID().toString()
-        val imagesRoot = File(capturesDir, ".").apply { parentFile?.mkdirs() }
         val imageFile = File(capturesDir, "$id.jpg")
+        imageFile.parentFile?.mkdirs()
         val output = ImageCapture.OutputFileOptions.Builder(imageFile).build()
         val mainExecutor = ContextCompat.getMainExecutor(appContext)
 
         viewModelScope.launch {
             try {
                 suspendCancellableCoroutine<Unit> { cont ->
-                    imageCapture.takePicture(
+                    cameraController.takePicture(
                         output,
                         mainExecutor,
                         object : ImageCapture.OnImageSavedCallback {
                             override fun onImageSaved(result: ImageCapture.OutputFileResults) {
                                 cont.resume(Unit)
                             }
-
                             override fun onError(exception: ImageCaptureException) {
                                 cont.resumeWithException(exception)
                             }

@@ -6,10 +6,8 @@ import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.view.PreviewView
+import androidx.camera.view.CameraController
+import androidx.camera.view.LifecycleCameraController
 import androidx.lifecycle.LifecycleOwner
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -29,8 +27,15 @@ private const val TARGET_FPS = 12
 private const val FRAME_INTERVAL_MS = 1000L / TARGET_FPS
 
 class CameraXOcrSource(
-    private val context: Context,
+    context: Context,
 ) {
+
+    val controller: LifecycleCameraController = LifecycleCameraController(context).apply {
+        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        imageAnalysisBackpressureStrategy = ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+        imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
+    }
 
     private val recognizer: TextRecognizer =
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -42,37 +47,12 @@ class CameraXOcrSource(
     private val frameCounter = AtomicLong(0L)
     private var lastProcessedMs = 0L
 
-    var imageCapture: ImageCapture? = null
-        private set
+    init {
+        controller.setImageAnalysisAnalyzer(executor, ::analyze)
+    }
 
-    suspend fun bind(
-        previewView: PreviewView,
-        lifecycleOwner: LifecycleOwner,
-        cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-    ) {
-        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-        cameraProvider.unbindAll()
-
-        val preview = Preview.Builder().build()
-        preview.setSurfaceProvider(previewView.surfaceProvider)
-
-        val analysis = ImageAnalysis.Builder()
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
-        analysis.setAnalyzer(executor, ::analyze)
-
-        val capture = ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .build()
-        imageCapture = capture
-
-        cameraProvider.bindToLifecycle(
-            lifecycleOwner,
-            cameraSelector,
-            preview,
-            analysis,
-            capture,
-        )
+    fun bind(lifecycleOwner: LifecycleOwner) {
+        controller.bindToLifecycle(lifecycleOwner)
     }
 
     @androidx.annotation.OptIn(ExperimentalGetImage::class)

@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,25 +98,19 @@ private fun CameraContent(
     val pair by viewModel.pair.collectAsStateWithLifecycle()
     var pickerTarget by remember { mutableStateOf<LanguagePickerTarget?>(null) }
 
-    val previewView = remember {
-        PreviewView(context).apply {
-            scaleType = PreviewView.ScaleType.FILL_CENTER
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-        }
+    LaunchedEffect(lifecycleOwner) {
+        viewModel.bindCamera(lifecycleOwner)
     }
 
-    LaunchedEffect(previewView, lifecycleOwner) {
-        viewModel.bindCamera(previewView, lifecycleOwner)
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { previewView },
+            factory = { ctx ->
+                PreviewView(ctx).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                    controller = viewModel.cameraController
+                }
+            },
         )
         AROverlay(blocks = blocks, modifier = Modifier.fillMaxSize())
 
