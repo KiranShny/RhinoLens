@@ -16,10 +16,11 @@ import io.github.kiranshny.rhinolens.shared.domain.Capture
 import io.github.kiranshny.rhinolens.shared.domain.Language
 import io.github.kiranshny.rhinolens.shared.domain.LanguagePair
 import io.github.kiranshny.rhinolens.shared.domain.Languages
+import io.github.kiranshny.rhinolens.shared.domain.OcrFrame
 import io.github.kiranshny.rhinolens.shared.domain.TranslatedBlock
+import io.github.kiranshny.rhinolens.shared.orchestrator.TranslationOrchestrator
 import io.github.kiranshny.rhinolens.shared.port.CaptureRepository
 import io.github.kiranshny.rhinolens.shared.port.SettingsRepository
-import io.github.kiranshny.rhinolens.shared.port.TranslationEngine
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -35,7 +37,8 @@ import kotlinx.datetime.Clock
 
 sealed interface ImportState {
     data object Empty : ImportState
-    data class Processing(val uri: Uri) : ImportState
+    data class Reading(val uri: Uri) : ImportState
+    data class Translating(val uri: Uri, val target: Language) : ImportState
     data class Ready(
         val uri: Uri,
         val blocks: List<TranslatedBlock>,
@@ -47,7 +50,7 @@ sealed interface ImportState {
 
 class ImportImageViewModel(
     private val appContext: Context,
-    private val translator: TranslationEngine,
+    private val orchestrator: TranslationOrchestrator,
     private val captures: CaptureRepository,
     private val settings: SettingsRepository,
     private val capturesDir: File,
@@ -59,26 +62,26 @@ class ImportImageViewModel(
     val state: StateFlow<ImportState> = _state.asStateFlow()
 
     fun process(uri: Uri) {
-        _state.value = ImportState.Processing(uri)
+        _state.value = ImportState.Reading(uri)
         viewModelScope.launch {
             try {
                 val target = settings.targetLanguage.first()
-                val input = InputImage.fromFilePath(appContext, uri)
-                val text = recognizer.process(input).await()
-                val width = input.width
-                val height = input.height
-                val ocrBlocks = text.toTextBlocks(width, height)
-                val translated = ocrBlocks.map { block ->
-                    val translation = runCatching {
-                        translator.translate(block.text, null, target.code)
-                    }.getOrElse { block.text }
-                    TranslatedBlock(
-                        source = block,
-                        translated = translation,
-                        detectedSource = Languages.default,
-                        target = target,
-                    )
+                _state.value = ImportState.Translating(uri, target)
+
+                val input = withContext(Dispatchers.IO) {
+                    InputImage.fromFilePath(appContext, uri)
                 }
+                val text = recognizer.process(input).await()
+                val ocrBlocks = text.toTextBlocks(input.width, input.height)
+                val frame = OcrFrame(
+                    frameId = 0L,
+                    timestampMs = System.currentTimeMillis(),
+                    blocks = ocrBlocks,
+                )
+                val pairFlow = MutableStateFlow(LanguagePair(source = null, target = target))
+                val translated = orchestrator
+                    .translatedStream(flowOf(frame), pairFlow)
+                    .first()
                 _state.value = ImportState.Ready(uri, translated, target)
             } catch (cause: Exception) {
                 _state.value = ImportState.Failed(cause.message ?: "Could not read image")
@@ -115,7 +118,7 @@ class ImportImageViewModel(
                     imagePath = imageRelative,
                     thumbnailPath = thumbRelative,
                     pair = LanguagePair(source = null, target = ready.target),
-                    detectedSource = Languages.default,
+                    detectedSource = ready.blocks.firstOrNull()?.detectedSource ?: Languages.default,
                     blocks = ready.blocks,
                 )
                 captures.save(capture)
@@ -142,7 +145,7 @@ class ImportImageViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
                     ImportImageViewModel(
                         appContext = appContext,
-                        translator = container.translationEngine,
+                        orchestrator = container.translationOrchestrator,
                         captures = container.captureRepository,
                         settings = container.settingsRepository,
                         capturesDir = container.capturesDir,

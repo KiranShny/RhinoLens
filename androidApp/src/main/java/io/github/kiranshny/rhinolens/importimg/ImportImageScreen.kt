@@ -93,33 +93,12 @@ fun ImportImageScreen(navController: NavHostController) {
                 ImportState.Empty -> Center {
                     Text("Pick an image to translate.")
                 }
-                is ImportState.Processing -> Column(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .background(Color.Black),
-                    ) {
-                        AsyncImage(
-                            model = s.uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        CircularProgressIndicator()
-                        Text("Reading and translating…")
-                    }
-                }
+                is ImportState.Reading -> ProgressOnImage(uri = s.uri, label = "Reading image…")
+                is ImportState.Translating -> ProgressOnImage(
+                    uri = s.uri,
+                    label = "Preparing ${s.target.displayName} pack…",
+                    sub = "First-time language packs are ~30 MB and download once.",
+                )
                 is ImportState.Ready -> Column(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
@@ -171,6 +150,48 @@ fun ImportImageScreen(navController: NavHostController) {
                     }
                 }
                 is ImportState.Saved -> Center { Text("Saved.") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressOnImage(
+    uri: android.net.Uri,
+    label: String,
+    sub: String? = null,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(Color.Black),
+        ) {
+            AsyncImage(
+                model = uri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CircularProgressIndicator()
+            Column {
+                Text(label, style = MaterialTheme.typography.bodyMedium)
+                if (sub != null) {
+                    Text(
+                        sub,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
