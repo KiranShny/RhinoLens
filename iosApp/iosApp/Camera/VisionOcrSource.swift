@@ -114,7 +114,6 @@ final class VisionOcrSource: NSObject, AVCaptureVideoDataOutputSampleBufferDeleg
         }
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
-        request.recognitionLanguages = recognitionLanguages
 
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
         try? handler.perform([request])

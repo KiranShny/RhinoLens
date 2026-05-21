@@ -70,7 +70,7 @@ struct ImportImageView: View {
     private func runOcrAndTranslate(image: UIImage) async {
         isProcessing = true
         let recognized = await OneShotVisionOcr.recognize(image: image)
-        let target = (try? await container.settingsRepository.targetLanguage.first()) ?? Languages.shared.default_
+        let target = (await firstFlowValue(container.settingsRepository.targetLanguage) as? Language) ?? Languages.shared.default_
         var translated: [TranslatedBlock] = []
         for textBlock in recognized {
             let result = (try? await container.translationEngine.translate(
@@ -108,17 +108,19 @@ struct ImportImageView: View {
                 try? thumb.write(to: thumbUrl)
             }
 
-            let target = (try? await container.settingsRepository.targetLanguage.first()) ?? Languages.shared.default_
+            let target = (await firstFlowValue(container.settingsRepository.targetLanguage) as? Language) ?? Languages.shared.default_
             let capture = Capture(
                 id: id,
-                createdAt: KotlinxDatetimeClock.System.shared.now(),
+                createdAt: Kotlinx_datetimeInstant.companion.fromEpochMilliseconds(
+                    epochMilliseconds: Int64(Date().timeIntervalSince1970 * 1000)
+                ),
                 imagePath: "captures/\(id).jpg",
                 thumbnailPath: "captures/thumbs/\(id).jpg",
                 pair: LanguagePair(source: nil, target: target),
                 detectedSource: Languages.shared.default_,
                 blocks: blocks
             )
-            try? await container.captureRepository.save(c: capture)
+            try? await container.captureRepository.save(capture: capture)
             savedId = id
         }
     }

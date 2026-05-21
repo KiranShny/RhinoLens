@@ -20,6 +20,7 @@
 		684EA0C66E6D18CFE0350A48 /* AROverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A104BC6BF499141099EFC526 /* AROverlayView.swift */; };
 		6DAFF19A1D0D205768CFCCB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2983DCA694B0FD7D645B7BA4 /* Assets.xcassets */; };
 		718CD809126FA4F455B29CBB /* ImportImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E23D95E46E4545F4F6C9C /* ImportImageView.swift */; };
+		841429B199FA7C050227A42E /* FlowHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246C5B509E573C359506F333 /* FlowHelpers.swift */; };
 		85F2BAB09135F21A81AAF396 /* CameraBottomToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407BC6D1FECD57288E33D0D4 /* CameraBottomToolbar.swift */; };
 		95420FC4AD345E31EA6B3CB1 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7321B96F88FCEFA6A2FFDEE3 /* CameraView.swift */; };
 		99D67B3DCED463AE9312540C /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99A222921EC39ADA734C1A4 /* CameraPreview.swift */; };
@@ -47,6 +48,7 @@
 
 /* Begin PBXFileReference section */
 		00D8F5A9F1DD944D5ECB126D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		246C5B509E573C359506F333 /* FlowHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowHelpers.swift; sourceTree = "<group>"; };
 		27932D607F571B967BB9FDD0 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		2983DCA694B0FD7D645B7BA4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		407BC6D1FECD57288E33D0D4 /* CameraBottomToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraBottomToolbar.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				CE0D1ADE3A123CE3E1518D2E /* AppContainer.swift */,
+				246C5B509E573C359506F333 /* FlowHelpers.swift */,
 				83BCF3034DAF28906D7DA5CD /* RhinoLensApp.swift */,
 				E6E03046C192B3E736B3B218 /* Camera */,
 				96F1A23DA6C0C3C42AA1429E /* Data */,
@@ -271,6 +274,7 @@
 				95420FC4AD345E31EA6B3CB1 /* CameraView.swift in Sources */,
 				18A907D0B056573A1BE7352E /* CameraViewModel.swift in Sources */,
 				A9CEEBBF43F8A2851D740F4B /* CaptureDetailView.swift in Sources */,
+				841429B199FA7C050227A42E /* FlowHelpers.swift in Sources */,
 				164908370BBD3D70842ACC8E /* HomeView.swift in Sources */,
 				718CD809126FA4F455B29CBB /* ImportImageView.swift in Sources */,
 				08D38DBF7723D158A1BF9204 /* LanguagePickerSheet.swift in Sources */,
@@ -298,7 +302,7 @@
 					"\"$(BUILT_PRODUCTS_DIR)\"",
 				);
 				INFOPLIST_FILE = iosApp/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 				);
@@ -366,7 +370,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -389,7 +393,7 @@
 					"\"$(BUILT_PRODUCTS_DIR)\"",
 				);
 				INFOPLIST_FILE = iosApp/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 				);
@@ -451,7 +455,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

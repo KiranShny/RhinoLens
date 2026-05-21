@@ -40,13 +40,11 @@ final class AppContainer: ObservableObject {
     }
 
     private func observeTheme(settings: SettingsRepository) {
-        Task { [weak self] in
-            for await mode in settings.theme {
-                guard let self else { return }
-                await MainActor.run {
-                    self.theme = mode
-                    self.preferredColorScheme = Self.colorScheme(for: mode)
-                }
+        observeFlow(settings.theme) { [weak self] value in
+            guard let self, let mode = value as? ThemeMode else { return }
+            Task { @MainActor in
+                self.theme = mode
+                self.preferredColorScheme = Self.colorScheme(for: mode)
             }
         }
     }

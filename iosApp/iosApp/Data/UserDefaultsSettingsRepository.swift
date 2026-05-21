@@ -9,43 +9,41 @@ final class UserDefaultsSettingsRepository: SettingsRepository {
     private let kTheme = "k_theme"
     private let kDynamicColor = "k_dynamic_color"
 
-    private let targetStream = AsyncStream<Language>.makeStream()
-    private let themeStream = AsyncStream<ThemeMode>.makeStream()
-    private let dynamicColorStream = AsyncStream<Bool>.makeStream()
+    private let targetState: SwiftMutableStateFlow<Language>
+    private let themeState: SwiftMutableStateFlow<ThemeMode>
+    private let dynamicColorState: SwiftMutableStateFlow<KotlinBoolean>
 
     init(store: UserDefaults = .standard) {
         self.store = store
-        emitCurrent()
+        let initialTarget = Self.readTarget(store: store)
+        let initialTheme = Self.readTheme(store: store)
+        let initialDynamic = (store.object(forKey: kDynamicColor) as? Bool) ?? true
+        targetState = SwiftMutableStateFlow<Language>(initial: initialTarget)
+        themeState = SwiftMutableStateFlow<ThemeMode>(initial: initialTheme)
+        dynamicColorState = SwiftMutableStateFlow<KotlinBoolean>(initial: KotlinBoolean(bool: initialDynamic))
     }
 
-    var targetLanguage: AsyncStream<Language> { targetStream.stream }
-    var theme: AsyncStream<ThemeMode> { themeStream.stream }
-    var dynamicColor: AsyncStream<Bool> { dynamicColorStream.stream }
+    var targetLanguage: any Kotlinx_coroutines_coreFlow { targetState.flow }
+    var theme: any Kotlinx_coroutines_coreFlow { themeState.flow }
+    var dynamicColor: any Kotlinx_coroutines_coreFlow { dynamicColorState.flow }
 
     func setTargetLanguage(language: Language) async throws {
         store.set(language.code.value, forKey: kTargetLang)
-        targetStream.continuation.yield(language)
+        targetState.set(value: language)
     }
 
     func setTheme(theme: ThemeMode) async throws {
         store.set(theme.name, forKey: kTheme)
-        themeStream.continuation.yield(theme)
+        themeState.set(value: theme)
     }
 
     func setDynamicColor(enabled: Bool) async throws {
         store.set(enabled, forKey: kDynamicColor)
-        dynamicColorStream.continuation.yield(enabled)
+        dynamicColorState.set(value: KotlinBoolean(bool: enabled))
     }
 
-    private func emitCurrent() {
-        let lang = readTarget()
-        targetStream.continuation.yield(lang)
-        themeStream.continuation.yield(readTheme())
-        dynamicColorStream.continuation.yield(store.object(forKey: kDynamicColor) as? Bool ?? true)
-    }
-
-    private func readTarget() -> Language {
-        if let code = store.string(forKey: kTargetLang),
+    private static func readTarget(store: UserDefaults) -> Language {
+        if let code = store.string(forKey: "k_target_lang"),
            let language = Languages.shared.byCode(code: LanguageCode(value: code)) {
             return language
         }
@@ -53,10 +51,12 @@ final class UserDefaultsSettingsRepository: SettingsRepository {
         return Languages.shared.byTag(tag: tag) ?? Languages.shared.default_
     }
 
-    private func readTheme() -> ThemeMode {
-        if let name = store.string(forKey: kTheme), let mode = ThemeMode.allCases.first(where: { $0.name == name }) {
-            return mode
+    private static func readTheme(store: UserDefaults) -> ThemeMode {
+        guard let name = store.string(forKey: "k_theme") else { return .system }
+        switch name {
+        case ThemeMode.light.name: return .light
+        case ThemeMode.dark.name: return .dark
+        default: return .system
         }
-        return .system
     }
 }

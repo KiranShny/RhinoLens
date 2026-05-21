@@ -35,8 +35,10 @@ struct LibraryView: View {
         }
         .navigationTitle("Library")
         .task {
-            for await items in container.captureRepository.observe() {
-                captures = items
+            observeFlow(container.captureRepository.observe()) { value in
+                if let array = value as? NSArray {
+                    captures = array.compactMap { $0 as? Capture }
+                }
             }
         }
     }

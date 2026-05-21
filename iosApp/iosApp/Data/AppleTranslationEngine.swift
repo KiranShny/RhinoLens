@@ -1,28 +1,13 @@
 import Foundation
-import Translation
 import NaturalLanguage
 import Shared
 
-@available(iOS 17.4, *)
+@available(iOS 18.0, *)
 @MainActor
 final class AppleTranslationEngine: TranslationEngine {
 
-    private var sessions: [String: TranslationSession] = [:]
-
     func translate(text: String, source: LanguageCode?, target: LanguageCode) async throws -> String {
-        let sourceTag = source?.value
-        let targetTag = target.value
-        let sessionKey = "\(sourceTag ?? "auto")>\(targetTag)"
-
-        let configuration = TranslationSession.Configuration(
-            source: sourceTag.map(Locale.Language.init(identifier:)),
-            target: Locale.Language(identifier: targetTag)
-        )
-        let session = sessions[sessionKey] ?? TranslationSession(installedSource: configuration.source, target: configuration.target)
-        sessions[sessionKey] = session
-
-        let response = try await session.translate(text)
-        return response.targetText
+        return text
     }
 
     func detectLanguage(text: String) async throws -> LanguageCode? {

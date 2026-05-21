@@ -39,7 +39,7 @@ final class SwiftDataCaptureRepository: CaptureRepository {
 
     private let container: ModelContainer
     private let context: ModelContext
-    private let subject = AsyncStream<[Capture]>.makeStream()
+    private let state: SwiftMutableStateFlow<NSArray>
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
@@ -49,12 +49,11 @@ final class SwiftDataCaptureRepository: CaptureRepository {
         self.context = ModelContext(container)
         encoder.dateEncodingStrategy = .millisecondsSince1970
         decoder.dateDecodingStrategy = .millisecondsSince1970
+        self.state = SwiftMutableStateFlow<NSArray>(initial: NSArray())
         Task { await refresh() }
     }
 
-    func observe() -> AsyncStream<[Capture]> {
-        subject.stream
-    }
+    func observe() -> any Kotlinx_coroutines_coreFlow { state.flow }
 
     func get(id: String) async throws -> Capture? {
         let predicate = #Predicate<CaptureEntity> { $0.id == id }
@@ -62,9 +61,10 @@ final class SwiftDataCaptureRepository: CaptureRepository {
         return try context.fetch(descriptor).first.map(toDomain)
     }
 
-    func save(c: Capture) async throws {
-        let entity = try toEntity(c)
-        let predicate = #Predicate<CaptureEntity> { $0.id == c.id }
+    func save(capture: Capture) async throws {
+        let entity = try toEntity(capture)
+        let captureId: String = capture.id
+        let predicate = #Predicate<CaptureEntity> { $0.id == captureId }
         let existing = try context.fetch(FetchDescriptor<CaptureEntity>(predicate: predicate)).first
         if let existing = existing {
             context.delete(existing)
@@ -95,7 +95,8 @@ final class SwiftDataCaptureRepository: CaptureRepository {
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         let entities = (try? context.fetch(descriptor)) ?? []
-        subject.continuation.yield(entities.map(toDomain))
+        let captures = entities.map(toDomain) as NSArray
+        state.set(value: captures)
     }
 
     private func toDomain(_ entity: CaptureEntity) -> Capture {
@@ -106,9 +107,12 @@ final class SwiftDataCaptureRepository: CaptureRepository {
             ?? Languages.shared.default_
         let blocks: [TranslatedBlock] = (try? decoder.decode([TranslatedBlockDTO].self, from: Data(entity.blocksJson.utf8)))?
             .compactMap { $0.toDomain() } ?? []
+        let createdAt = Kotlinx_datetimeInstant.companion.fromEpochMilliseconds(
+            epochMilliseconds: Int64(entity.createdAt.timeIntervalSince1970 * 1000)
+        )
         return Capture(
             id: entity.id,
-            createdAt: KotlinxDatetimeInstant.companion.fromEpochMilliseconds(epochMilliseconds: Int64(entity.createdAt.timeIntervalSince1970 * 1000)),
+            createdAt: createdAt,
             imagePath: entity.imagePath,
             thumbnailPath: entity.thumbnailPath,
             pair: LanguagePair(source: source, target: target),

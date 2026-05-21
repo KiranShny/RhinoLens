@@ -33,11 +33,9 @@ final class CameraViewModel: NSObject, ObservableObject, AVCapturePhotoCaptureDe
         self.ocrSource = source
         source.start()
 
-        pairTask = Task { [weak self] in
-            guard let self = self else { return }
-            for await lang in container.settingsRepository.targetLanguage {
-                self.target = lang
-            }
+        observeFlow(container.settingsRepository.targetLanguage) { [weak self] value in
+            guard let self, let lang = value as? Language else { return }
+            Task { @MainActor in self.target = lang }
         }
     }
 
@@ -104,14 +102,16 @@ final class CameraViewModel: NSObject, ObservableObject, AVCapturePhotoCaptureDe
         let detected = blocks.first?.detectedSource ?? source ?? Languages.shared.default_
         let capture = Capture(
             id: id,
-            createdAt: KotlinxDatetimeClock.System.shared.now(),
+            createdAt: Kotlinx_datetimeInstant.companion.fromEpochMilliseconds(
+                epochMilliseconds: Int64(Date().timeIntervalSince1970 * 1000)
+            ),
             imagePath: "captures/\(id).jpg",
             thumbnailPath: "captures/thumbs/\(id).jpg",
             pair: pair,
             detectedSource: detected,
             blocks: blocks
         )
-        try? await container.captureRepository.save(c: capture)
+        try? await container.captureRepository.save(capture: capture)
         pendingCapture?(id)
         pendingCapture = nil
     }

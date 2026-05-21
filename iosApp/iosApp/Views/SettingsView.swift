@@ -71,18 +71,16 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .task {
-            for await lang in container.settingsRepository.targetLanguage {
-                target = lang
+            observeFlow(container.settingsRepository.targetLanguage) { value in
+                if let lang = value as? Language { target = lang }
             }
-        }
-        .task {
-            for await mode in container.settingsRepository.theme {
-                theme = mode
+            observeFlow(container.settingsRepository.theme) { value in
+                if let mode = value as? ThemeMode { theme = mode }
             }
-        }
-        .task {
-            for await list in container.modelPackManager.observePacks() {
-                packs = list
+            observeFlow(container.modelPackManager.observePacks()) { value in
+                if let array = value as? NSArray {
+                    packs = array.compactMap { $0 as? DownloadedPack }
+                }
             }
         }
         .sheet(isPresented: $showTargetPicker) {
