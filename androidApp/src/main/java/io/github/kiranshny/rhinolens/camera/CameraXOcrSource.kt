@@ -53,13 +53,14 @@ class CameraXOcrSource(
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         cameraProvider.unbindAll()
 
-        val preview = Preview.Builder().build().apply {
-            surfaceProvider = previewView.surfaceProvider
-        }
+        val preview = Preview.Builder().build()
+        preview.setSurfaceProvider(previewView.surfaceProvider)
+
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
-            .apply { setAnalyzer(executor, ::analyze) }
+        analysis.setAnalyzer(executor, ::analyze)
+
         val capture = ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .build()

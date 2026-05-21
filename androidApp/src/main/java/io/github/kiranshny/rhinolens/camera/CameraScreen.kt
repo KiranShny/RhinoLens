@@ -93,10 +93,22 @@ private fun CameraContent(
     onOpenLibrary: () -> Unit,
     onOpenCapture: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val blocks by viewModel.translatedBlocks.collectAsStateWithLifecycle()
     val pair by viewModel.pair.collectAsStateWithLifecycle()
     var pickerTarget by remember { mutableStateOf<LanguagePickerTarget?>(null) }
+
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        }
+    }
+
+    LaunchedEffect(previewView, lifecycleOwner) {
+        viewModel.bindCamera(previewView, lifecycleOwner)
+    }
 
     Box(
         modifier = Modifier
@@ -105,12 +117,7 @@ private fun CameraContent(
     ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    scaleType = PreviewView.ScaleType.FILL_CENTER
-                    viewModel.bindCamera(this, lifecycleOwner)
-                }
-            },
+            factory = { previewView },
         )
         AROverlay(blocks = blocks, modifier = Modifier.fillMaxSize())
 
